@@ -1,0 +1,9 @@
+{
+  "extends": "./node_modules/@benricheson101/util/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "build",
+    "noEmit": false
+  },
+  "include": ["./src/**/*", "scripts/**/*"]
+}

@@ -1,0 +1,8 @@
+/creds*.json
+/src/ws_test.ts
+/.env
+
+*.log
+*.xxd
+/build
+/node_modules
