@@ -1,13 +1,11 @@
 import assert from 'node:assert';
 import {createConnection} from 'node:net';
-import path from 'node:path';
 import {createInterface} from 'node:readline';
 import {inspect} from 'node:util';
 import {connectToGateway} from './gateway';
 import {exchange, refresh, sendLobbyMessage} from './rest';
 import {loadCreds} from './state';
-
-const socketPath = path.join(process.env.TMPDIR!, '/discord-ipc-0');
+import {assertEnv, findUnixSocket} from './util';
 
 const Opcode = {
   Handshake: 0,
@@ -47,7 +45,11 @@ let creds = loadCreds();
 let rpcReady: any;
 let gwReady: any;
 
+assertEnv(['CLIENT_ID', 'CLIENT_SECRET', 'REDIRECT_URI']);
+
 const start = () => {
+  const socketPath = findUnixSocket()!;
+
   const client = createConnection(
     {path: socketPath},
     () => void console.log('Socket is open')
@@ -129,7 +131,9 @@ const start = () => {
               'RPC user and Gateway user are different'
             );
 
-            startInteractive(gwReady);
+            // startInteractive(gwReady);
+
+            console.dir(gwReady, {depth: null});
 
             break;
           }
@@ -163,6 +167,15 @@ const start = () => {
             }
             break;
           }
+
+          case 'PRESENCE_UPDATE': {
+            break;
+          }
+
+          default: {
+            console.log('Got a different event:', msg.t);
+            break;
+          }
         }
       });
     }
@@ -181,7 +194,10 @@ const startInteractive = (ready: any) => {
   }
 
   console.log();
-  console.log('Starting interactive chat. Use `/l <lobby>` to switch lobbies. Available lobbies:', lobbies.map((l: any) => l.id).join(', '))
+  console.log(
+    'Starting interactive chat. Use `/l <lobby>` to switch lobbies. Available lobbies:',
+    lobbies.map((l: any) => l.id).join(', ')
+  );
   console.log();
 
   const rl = createInterface({
@@ -220,6 +236,7 @@ declare global {
       CLIENT_ID: string;
       CLIENT_SECRET: string;
       REDIRECT_URI: string;
+      DISCORD_SOCKET?: string;
     }
   }
 }

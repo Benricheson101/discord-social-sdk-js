@@ -54,6 +54,59 @@ export const refresh = async (refreshToken: string) => {
   return resp;
 };
 
+export const clientCredentials = async (
+  url: string,
+  clientID: string,
+  clientSecret: string,
+  scope: string
+) => {
+  const body = {
+    client_id: clientID,
+    client_secret: clientSecret,
+    grant_type: 'client_credentials',
+    scope,
+  };
+
+  const resp = (await fetch(url, {
+    method: 'post',
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    body: toForm(body),
+  }).then(r => r.json())) as any;
+
+  return resp;
+};
+
+export const getTokenURL = async (oidcConfig: string) => {
+  const cfg = (await fetch(oidcConfig).then(r => r.json())) as any;
+  return cfg.token_endpoint;
+};
+
+export const getProvisionalToken = async (
+  idpToken: string,
+  discordClientID: string,
+  discordClientSecret: string,
+  authType = 'OIDC'
+) => {
+  const body = {
+    client_id: discordClientID,
+    client_secret: discordClientSecret,
+    external_auth_type: authType,
+    external_auth_token: idpToken,
+  };
+
+  const resp = (await fetch('https://discord.com/api/v10/partner-sdk/token', {
+    method: 'post',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  }).then(r => r.json())) as any;
+
+  return resp;
+};
+
 export const getDM = async (accessToken: string, userID: string) => {
   const resp = await fetch(
     `https://discord.com/api/v10/users/@me/dms/${userID}`,
@@ -108,6 +161,72 @@ export const sendLobbyMessage = async (
       body: JSON.stringify({
         content,
         metadata,
+      }),
+    }
+  ).then(r => r.json());
+
+  return resp;
+};
+
+export const createLobbyBackend = async (
+  botToken: string,
+  members: {id: string; flags?: number}[]
+) => {
+  const resp = await fetch('https://discord.com/api/v10/lobbies', {
+    method: 'post',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bot ${botToken}`,
+    },
+    body: JSON.stringify({
+      members,
+    }),
+  }).then(r => r.json());
+
+  return resp;
+};
+
+export const addToLobby = async (
+  token: string,
+  lobbyID: string,
+  memberID: string,
+  flags = 0,
+  tokenType: 'Bearer' | 'Bot' = 'Bot'
+) => {
+  const resp = await fetch(
+    `https://discord.com/api/v10/lobbies/${lobbyID}/members/${memberID}`,
+    {
+      method: 'put',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `${tokenType} ${token}`,
+      },
+      body: JSON.stringify({
+        flags,
+        shutdown_idle_timeout_secs: 604_800, // 1 week
+      }),
+    }
+  ).then(r => r.json());
+
+  return resp;
+};
+
+export const linkLobby = async (
+  token: string,
+  lobbyID: string,
+  channelID: string,
+  tokenType: 'Bearer' | 'Bot' = 'Bot'
+) => {
+  const resp = await fetch(
+    `https://discord.com/api/v10/lobbies/${lobbyID}/channel-linking`,
+    {
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `${tokenType} ${token}`,
+      },
+      body: JSON.stringify({
+        channel_id: channelID,
       }),
     }
   ).then(r => r.json());

@@ -51,7 +51,7 @@ export const connectToGateway = (
               (1 << 18) | // private channels
               (1 << 19) | // ?
               (1 << 22) | // user relationships
-              // (1 << 23) | // user presence
+              (1 << 23) | // user presence
               (1 << 27) | // ?
               (1 << 28), // ?
             properties: {
